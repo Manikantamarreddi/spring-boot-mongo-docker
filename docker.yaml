@@ -1,7 +1,7 @@
 ---
 - hosts: all
-  ansible_user: ubuntu
   become: True
+  ansible_user: ubuntu
   tasks:
    - name: Install aws cli
      apt:
