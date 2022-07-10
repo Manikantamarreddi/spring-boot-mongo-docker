@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: _Build_Server,_Deployment_Servers
   become: True
   tasks:
    - name: Install aws cli
