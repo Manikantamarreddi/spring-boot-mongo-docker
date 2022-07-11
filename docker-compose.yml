@@ -40,6 +40,5 @@ volumes:
   mongodb:
     
 networks:
-  defaults:
-    external:
-      name: customoverlay
+  customoverlay:
+    external: true
