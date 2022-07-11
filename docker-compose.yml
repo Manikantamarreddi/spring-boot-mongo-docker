@@ -40,4 +40,5 @@ volumes:
   mongodb:
     
 networks:
-  springappnetwork:
+  customoverlay:
+    external: true
