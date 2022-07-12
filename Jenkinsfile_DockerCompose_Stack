@@ -1,0 +1,58 @@
+customoverlay
+
+
+pipeline{
+    
+    agent any
+    
+    tools {
+  maven 'Maven3.8.6'
+}
+
+    
+    stages{
+        
+        stage('Checkout Code'){
+            steps{
+                git branch: 'master', url: 'https://github.com/Manikantamarreddi/spring-boot-mongo-docker.git'
+            }
+        }
+        
+        stage('Build the package'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        
+        stage('Build the image'){
+            steps{
+                sh "docker build -t 938645488558.dkr.ecr.ap-south-1.amazonaws.com/spring-boot-mongo:$BUILD_NUMBER ."
+            }
+        }
+        
+        stage('Authenticate and push the image to ECR'){
+            steps{
+                sh "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 938645488558.dkr.ecr.ap-south-1.amazonaws.com"
+                sh "docker push 938645488558.dkr.ecr.ap-south-1.amazonaws.com/spring-boot-mongo:$BUILD_NUMBER"
+            }
+        }
+        
+        stage('Edit docker-compose file and copy to Docker Swarm Cluster'){
+            steps{
+                sh "sed -i 's/IMAGETAG/${BUILD_NUMBER}/gi' docker-compose.yml"
+                sshagent(['pemfile']) {
+                   sh "scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@172.31.10.88:"
+                }
+            }
+        }
+        
+        stage('Deploy in DokcerSwarm cluster as a stack'){
+            steps{
+                sshagent(['pemfile']) {
+                sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.10.88 aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 938645488558.dkr.ecr.ap-south-1.amazonaws.com"
+                sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.10.88 docker stack deploy --with-registry-auth --compose-file docker-compose.yml springapp"
+                }
+            }
+        }
+    }
+}
